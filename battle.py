@@ -1,4 +1,40 @@
 import random
+import pygame
+import sys
+
+# Initialize PyGame
+pygame.init()
+
+# Set up window
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Battle Game")
+
+font = pygame.font.Font(None, 36)
+
+# Colors
+WHITE = (255, 255, 255)
+RED = (200, 0, 0)
+GREEN = (0, 200, 0)
+GRAY = (100, 100, 100)
+BLACK = (0, 0, 0)
+
+# Button class
+class Button:
+    def __init__(self, text, x, y, width, height, action):
+        self.text = text
+        self.rect = pygame.Rect(x, y, width, height)
+        self.action = action
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, GRAY, self.rect)
+        text_surf = font.render(self.text, True, BLACK)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
+
+    def is_clicked(self, pos):
+        return self.rect.collidepoint(pos)
+    
 class Player:
     def __init__(self, name, hp, attack_power):
         self.name = name
@@ -102,6 +138,22 @@ def main():
         if again != "y":
             print("Thanks for playing!")
             break
+        # Main loop
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            # Fill the screen with black
+            screen.fill((0, 0, 0))
+
+            # Update the display
+            pygame.display.flip()
+
+        # Clean exit
+        pygame.quit()
+        sys.exit()
 
 if __name__ == "__main__":
     main()
