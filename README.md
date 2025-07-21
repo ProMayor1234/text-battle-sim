@@ -1,24 +1,34 @@
 # Text Battle Simulator
 
-A turn-based battle game where you face off against an AI opponent. Choose your attacks wisely while your opponent randomly selects their moves.
+A turn-based battle game where you face off against AI opponents. Battle through increasingly difficult enemies and build up your win streak!
 
 ## Features
 
-- Turn-based combat system
-- Two different attack moves:
-  - Slash (4-8 damage)
-  - Heavy Strike (7-12 damage, 50% chance to miss)
-- Both player and opponent start with 30 HP
-- Strategic decision making between reliable vs risky attacks
+- Turn-based combat system with 3 strategic moves:
+  - Strike (deal your current attack power as damage)
+  - Heal (recover HP equal to half your attack power)
+  - Power Up (increase attack power by 50%)
+- Win streak system that increases your stats
+- Dynamic enemy scaling
+- Intelligent CPU opponent that adapts to battle conditions
 
 ## How to Play
 
 1. Run the game using Python: `python battle.py`
 2. Each turn, choose your attack by entering:
-   - `1` for Slash
-   - `2` for Heavy Strike
-3. The opponent will randomly choose their attacks
-4. Battle continues until either you or your opponent reaches 0 HP
+   - `1` for Strike
+   - `2` for Heal 
+   - `3` for Power Up
+3. The opponent will choose moves based on battle conditions
+4. Win consecutive battles to increase your power
+5. Battle continues until either you or your opponent reaches 0 HP
+
+## Stats
+
+- Player starts with 100 HP and 10 Attack
+- Stats increase with each win
+- Enemy stats scale with your win streak
+- Each win increases base HP by 100 and Attack by 10
 
 ## Requirements
 
