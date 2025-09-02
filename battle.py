@@ -1,13 +1,5 @@
-import pygame
 import random
 import sys
-
-pygame.init()
-WIDTH, HEIGHT = 600, 400
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-FONT = pygame.font.SysFont("consolas", 24)
-BIGFONT = pygame.font.SysFont("consolas", 32)
 
 class Player:
     def __init__(self, name, hp, attack_power):
@@ -22,112 +14,103 @@ class Player:
 def strike(hero, monster, log):
     damage = hero.attack_power
     monster.hp -= damage
-    log.append(f"{hero.name} uses Strike for {damage} damage! {monster.name} HP: {max(monster.hp, 0)}")
+    log.append(f"{hero.name} uses Strike for {damage} damage!")
 
 def heal(hero, log):
-    heal_amount = hero.attack_power // 2
+    heal_amount = hero.attack_power * 2
     hero.hp = min(hero.hp + heal_amount, hero.max_hp)
-    log.append(f"{hero.name} heals for {heal_amount} HP! {hero.name} HP: {hero.hp}")
+    log.append(f"{hero.name} heals for {heal_amount} HP!")
 
 def power_up(hero, log):
     hero.attack_power = int(hero.attack_power * 1.5)
-    log.append(f"{hero.name} uses Power Up! Attack power is now {hero.attack_power}.")
+    log.append(f"{hero.name} uses Power Up!")
 
-def cpu_attack(cpu, player, log):
+def cpu_attack(cpu, player, log, last_move):
     log.append(f"{cpu.name} is thinking...")
-    if cpu.attack_power >= player.hp:
-        log.append(f"{cpu.name}'s Attack ({cpu.attack_power}) can defeat {player.name} (HP {player.hp}). Choosing to attack!")
-        strike(cpu, player, log)
-    elif cpu.hp < player.hp and cpu.hp < cpu.max_hp - cpu.attack_power and cpu.hp >= player.attack_power:
-        log.append(f"{cpu.name}'s HP ({cpu.hp}) is lower than {player.name}'s HP ({player.hp}), not at max, and not in immediate danger. Choosing to heal!")
-        heal(cpu, log)
-    elif cpu.attack_power < player.attack_power:
-        log.append(f"{cpu.name}'s Attack ({cpu.attack_power}) is lower than {player.name}'s Attack ({player.attack_power}). Choosing to power up!")
+    if cpu.attack_power < player.attack_power and last_move != "power_up":
+        log.append(f"{cpu.name} is choosing to power up!")
         power_up(cpu, log)
+        return "power_up"
+    elif cpu.hp < player.hp and last_move != "heal" and cpu.hp < cpu.max_hp - cpu.attack_power * 2:
+        log.append(f"{cpu.name} is choosing to heal!")
+        heal(cpu, log)
+        return "heal"
     else:
-        log.append(f"{cpu.name} has good stats. Choosing to attack!")
+        log.append(f"{cpu.name} is choosing to attack!")
         strike(cpu, player, log)
+        return "strike"
 
-def draw_text_lines(surface, lines, x, y, font, color=BLACK):
-    for line in lines:
-        txt = font.render(line, True, color)
-        surface.blit(txt, (x, y))
-        y += txt.get_height() + 2
+def display_status(player, enemy, log):
+    print("\n--- Status ---")
+    print(f"{player.name}: HP = {player.hp}/{player.max_hp}, Attack = {player.attack_power}")
+    print(f"{enemy.name}: HP = {enemy.hp}/{enemy.max_hp}")
+    print("\n--- Log ---")
+    for line in log[-4:]:
+        print(line)
 
 def main():
     win_streak = 0
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Text Battle Simulator (Pygame)")
-    clock = pygame.time.Clock()
 
     while True:
-        p1 = Player("Hero", (win_streak + 1) * 100, (win_streak + 1) * 10)
-        enemy_names = ["Goblin", "Shadow", "DoomBot", "Crimson Fang", "Rogue AI"]
+        # Initialize players
         base_attack = (win_streak + 1) * 10
+        p1 = Player("Hero", (win_streak + 1) * 100, base_attack)
+        enemy_names = ["Goblin", "Shadow", "DoomBot", "Crimson Fang", "Rogue AI"]
         enemy_attack = random.randint(
-            int(base_attack - base_attack/2), 
-            int(base_attack + base_attack/2)
+            int(base_attack * 0.5),
+            int(base_attack * 1.5)
         )
         enemy_hp = (p1.attack_power + p1.hp) - enemy_attack
         p2 = Player(random.choice(enemy_names), enemy_hp, enemy_attack)
         log = ["Battle Start!"]
+        global turn
         turn = 0
         game_over = False
-        winner = None
+        cpu_last_move = None
 
         while not game_over:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN and turn % 2 == 0 and not game_over:
-                    if event.key == pygame.K_1:
-                        strike(p1, p2, log)
-                        turn += 1
-                    elif event.key == pygame.K_2:
-                        heal(p1, log)
-                        turn += 1
-                    elif event.key == pygame.K_3:
-                        power_up(p1, log)
-                        turn += 1
+            display_status(p1, p2, log)
 
-            if turn % 2 == 1 and not game_over:
-                pygame.time.delay(500)
-                cpu_attack(p2, p1, log)
+            if turn % 2 == 0:  # Player's turn
+                # Show current stats before choice
+                print(f"\n[Hero HP: {p1.hp}/{p1.max_hp}] [Hero Attack: {p1.attack_power}] [CPU HP: {p2.hp}/{p2.max_hp}]")
+                print("\nYour move: 1 = Strike  2 = Heal  3 = Power Up")
+                choice = input("Enter your choice: ").strip()
+                if choice == "1":
+                    strike(p1, p2, log)
+                    turn += 1
+                elif choice == "2":
+                    heal(p1, log)
+                    turn += 1
+                elif choice == "3":
+                    power_up(p1, log)
+                    turn += 1
+                else:
+                    print("Invalid choice. Try again.")
+            else:  # CPU's turn
+                cpu_last_move = cpu_attack(p2, p1, log, cpu_last_move)
                 turn += 1
 
+            # Check for game over
             if not p1.is_alive() or not p2.is_alive():
                 game_over = True
                 winner = p1 if p1.is_alive() else p2
                 log.append(f"{winner.name} wins the battle!")
 
-            screen.fill(WHITE)
-            status_lines = [
-                f"{p1.name}: HP = {p1.hp}, Attack = {p1.attack_power}",
-                f"{p2.name}: HP = {p2.hp}, Attack = {p2.attack_power}",
-                "",
-                "Your move: 1=Strike  2=Heal  3=Power Up"
-            ]
-            draw_text_lines(screen, status_lines, 20, 20, FONT)
-            draw_text_lines(screen, log[-7:], 20, 150, FONT)
-            if game_over:
-                end_msg = f"Win streak: {win_streak+1 if p1.is_alive() else 0}"
-                txt = BIGFONT.render(end_msg, True, (0,128,0) if p1.is_alive() else (200,0,0))
-                screen.blit(txt, (20, HEIGHT-60))
-                txt2 = FONT.render("Press [SPACE] to play again or close window to quit.", True, BLACK)
-                screen.blit(txt2, (20, HEIGHT-30))
-            pygame.display.flip()
-            clock.tick(30)
+        # Display game over message
+        display_status(p1, p2, log)
+        if p1.is_alive():
+            print(f"\nYou won! Win streak: {win_streak + 1}")
+            win_streak += 1
+        else:
+            print("\nYou lost! Win streak reset to 0.")
+            win_streak = 0
 
-            if game_over:
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_SPACE]:
-                    if p1.is_alive():
-                        win_streak += 1
-                    else:
-                        win_streak = 0
-                    pygame.time.wait(300)
-                    break
+        # Ask to play again
+        again = input("\nPlay again? (y/n): ").strip().lower()
+        if again != "y":
+            print("Thanks for playing!")
+            break
 
 if __name__ == "__main__":
     main()
